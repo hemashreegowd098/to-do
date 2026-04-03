@@ -1,0 +1,154 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>My Tasks — To-Do App (Preview)</title>
+  <link rel="stylesheet" href="static/style.css" />
+</head>
+<body>
+
+  <div class="todo-wrapper">
+    <div class="card">
+
+      <!-- Header -->
+      <div class="todo-header">
+        <div class="todo-header-meta">
+          <h1>My <span>Tasks</span></h1>
+          <p class="subtitle">Hello, <strong>hema</strong> — let's get things done!</p>
+        </div>
+        <a href="preview_login.html" class="logout-link" id="logout-btn">&#8594; Logout</a>
+      </div>
+
+      <!-- Add Task Form (static demo) -->
+      <form class="add-task-form" id="add-task-form" onsubmit="addTask(event)">
+        <input type="text" id="new-task-input" name="task" placeholder="What needs to be done?" autocomplete="off" required />
+        <button type="submit" id="add-task-btn" class="btn btn-primary">+ Add Task</button>
+      </form>
+
+      <!-- Stats -->
+      <div class="task-stats" id="task-stats">
+        <span class="stat-badge" id="stat-total">&#128221; 3 total</span>
+        <span class="stat-badge" id="stat-done">&#10003; 1 done</span>
+        <span class="stat-badge" id="stat-remaining">&#9711; 2 remaining</span>
+      </div>
+
+      <hr class="divider" />
+
+      <!-- Task List -->
+      <ul class="task-list" id="task-list">
+
+        <li class="task-item completed" id="task-item-1">
+          <div class="task-checkbox-wrap">
+            <input type="checkbox" id="checkbox-1" checked onchange="toggleTask(this)" />
+            <span class="check-visual"></span>
+          </div>
+          <label for="checkbox-1" class="task-label">Buy groceries</label>
+          <button class="btn btn-danger" onclick="deleteTask(this, 'task-item-1')" id="delete-1" title="Delete">&#10005;</button>
+        </li>
+
+        <li class="task-item" id="task-item-2">
+          <div class="task-checkbox-wrap">
+            <input type="checkbox" id="checkbox-2" onchange="toggleTask(this)" />
+            <span class="check-visual"></span>
+          </div>
+          <label for="checkbox-2" class="task-label">Finish the Flask backend</label>
+          <button class="btn btn-danger" onclick="deleteTask(this, 'task-item-2')" id="delete-2" title="Delete">&#10005;</button>
+        </li>
+
+        <li class="task-item" id="task-item-3">
+          <div class="task-checkbox-wrap">
+            <input type="checkbox" id="checkbox-3" onchange="toggleTask(this)" />
+            <span class="check-visual"></span>
+          </div>
+          <label for="checkbox-3" class="task-label">Review pull requests</label>
+          <button class="btn btn-danger" onclick="deleteTask(this, 'task-item-3')" id="delete-3" title="Delete">&#10005;</button>
+        </li>
+
+      </ul>
+
+    </div>
+  </div>
+
+  <script>
+    var nextId = 100;
+
+    function updateStats() {
+      var items = document.querySelectorAll('#task-list .task-item');
+      var done  = document.querySelectorAll('#task-list .task-item.completed');
+      var total = items.length;
+      var doneCount = done.length;
+      document.getElementById('stat-total').textContent = '\uD83D\uDCDD ' + total + ' total';
+      document.getElementById('stat-done').textContent = '\u2713 ' + doneCount + ' done';
+      document.getElementById('stat-remaining').textContent = '\u25CB ' + (total - doneCount) + ' remaining';
+
+      var emptyState = document.getElementById('empty-state');
+      if (total === 0) {
+        if (!emptyState) {
+          var list = document.getElementById('task-list');
+          list.insertAdjacentHTML('afterend',
+            '<div class="empty-state" id="empty-state">' +
+            '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">' +
+            '<rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/>' +
+            '<path d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01M16 18h.01"/>' +
+            '</svg><p>No tasks yet. Add one above to get started!</p></div>');
+        }
+        document.getElementById('task-stats').style.display = 'none';
+      } else {
+        if (emptyState) emptyState.remove();
+        document.getElementById('task-stats').style.display = '';
+      }
+    }
+
+    function toggleTask(cb) {
+      var id   = cb.id.replace('checkbox-', '');
+      var item = document.getElementById('task-item-' + id);
+      if (item) item.classList.toggle('completed', cb.checked);
+      updateStats();
+    }
+
+    function deleteTask(btn, itemId) {
+      var item = document.getElementById(itemId);
+      if (item) {
+        item.style.transition = 'opacity 0.25s, transform 0.25s';
+        item.style.opacity = '0';
+        item.style.transform = 'translateX(20px)';
+        setTimeout(function() {
+          item.remove();
+          updateStats();
+        }, 260);
+      }
+    }
+
+    function addTask(e) {
+      e.preventDefault();
+      var input = document.getElementById('new-task-input');
+      var text  = input.value.trim();
+      if (!text) return;
+
+      var id   = ++nextId;
+      var list = document.getElementById('task-list');
+
+      var li = document.createElement('li');
+      li.className = 'task-item';
+      li.id = 'task-item-' + id;
+      li.innerHTML =
+        '<div class="task-checkbox-wrap">' +
+          '<input type="checkbox" id="checkbox-' + id + '" onchange="toggleTask(this)" />' +
+          '<span class="check-visual"></span>' +
+        '</div>' +
+        '<label for="checkbox-' + id + '" class="task-label">' + escapeHtml(text) + '</label>' +
+        '<button class="btn btn-danger" onclick="deleteTask(this,\'task-item-' + id + '\')" id="delete-' + id + '" title="Delete">&#10005;</button>';
+
+      list.appendChild(li);
+      input.value = '';
+      updateStats();
+    }
+
+    function escapeHtml(str) {
+      return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+    }
+  </script>
+
+</body>
+</html>
