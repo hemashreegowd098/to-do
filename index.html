@@ -1,0 +1,283 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="description" content="A professional Todoist-style Task Manager." />
+  <title>Inbox — My Tasks</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+
+  <!-- ================= SIDEBAR ================= -->
+  <aside class="sidebar" id="sidebar">
+    <div class="user-profile">
+      <div class="avatar">{{ username[0] | upper if username else 'U' }}</div>
+      <div class="username">{{ username or 'Guest Account' }}</div>
+    </div>
+
+    <ul class="nav-section">
+      <a href="{{ url_for('index', filter='inbox') }}" class="nav-item {% if filter_type == 'inbox' %}active{% endif %}">
+        <div class="nav-item-left">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M19 3H4.99C3.88 3 3 3.89 3 5v14c0 1.1.89 2 2 2H19c1.1 0 2-.9 2-2V5c0-1.11-.9-2-2-2zm0 16H4.99V5H19v14z"/>
+          </svg>
+          Inbox
+        </div>
+        <span class="nav-count">{{ total_inbox | default(0) }}</span>
+      </a>
+
+      <a href="{{ url_for('index', filter='today') }}" class="nav-item {% if filter_type == 'today' %}active{% endif %}">
+        <div class="nav-item-left">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" style="color: #058527;">
+            <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/>
+          </svg>
+          Today
+        </div>
+        <span class="nav-count">{{ total_today | default(0) }}</span>
+      </a>
+
+      <a href="{{ url_for('index', filter='upcoming') }}" class="nav-item {% if filter_type == 'upcoming' %}active{% endif %}">
+        <div class="nav-item-left">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" style="color: #692fc2;">
+            <path d="M9 11H7v2h2v-2zm4 0h-2v2h2v-2zm4 0h-2v2h2v-2zm2-7h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V9h14v11z"/>
+          </svg>
+          Upcoming
+        </div>
+        <span class="nav-count">{{ total_upcoming | default(0) }}</span>
+      </a>
+    </ul>
+
+    <div class="section-header">
+      <span>Projects</span>
+      <button onclick="document.getElementById('add-project-form').style.display='block'" title="Add Project" style="background:none; border:none; cursor:pointer; color:inherit;">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+      </button>
+    </div>
+    
+    <div id="add-project-form" style="display:none; padding: 8px 12px;">
+      <form method="POST" action="{{ url_for('add_project') }}" style="display:flex; flex-direction:column; gap:8px;">
+        <input type="text" name="project_name" placeholder="Name" required style="border:1px solid var(--border-color); border-radius:4px; padding:4px 8px; font-size:13px; outline:none;">
+        <div style="display:flex; gap:4px; justify-content:flex-end;">
+          <button type="button" onclick="document.getElementById('add-project-form').style.display='none'" class="btn btn-cancel" style="padding:4px 8px; font-size:12px;">Cancel</button>
+          <button type="submit" class="btn btn-submit" style="padding:4px 8px; font-size:12px;">Add</button>
+        </div>
+      </form>
+    </div>
+
+    <ul class="nav-section projects-list">
+      {% for project in projects %}
+      <div style="display: flex; align-items: center; justify-content: space-between;">
+        <a href="{{ url_for('index', project_id=project.id) }}" class="nav-item {% if active_project_id == project.id %}active{% endif %}" style="flex:1; margin-bottom: 2px;">
+          <div class="nav-item-left">
+            <span style="color:var(--text-secondary); margin-right: 8px;">#</span> {{ project.name }}
+          </div>
+          <span class="nav-count" style="margin-right: 8px;">{{ project.tasks|selectattr('completed', 'equalto', False)|list|length }}</span>
+        </a>
+        <form method="POST" action="{{ url_for('delete_project', project_id=project.id) }}">
+          <button type="submit" style="background:none; border:none; padding:4px 8px; cursor:pointer; color:var(--text-secondary); font-size:16px; border-radius:4px; margin-bottom:2px;" title="Remove Project" onmouseover="this.style.background='var(--bg-hover)'; this.style.color='var(--accent)';" onmouseout="this.style.background='none'; this.style.color='var(--text-secondary)';">&times;</button>
+        </form>
+      </div>
+      {% endfor %}
+    </ul>
+    
+    <div style="flex:1;"></div>
+    
+    {% if username %}
+      <a href="{{ url_for('logout') }}" class="nav-item" style="margin-top: auto; opacity: 0.8;">
+        <div class="nav-item-left">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+          </svg>
+          Log out
+        </div>
+      </a>
+    {% else %}
+      <a href="{{ url_for('login') }}" class="nav-item" style="margin-top: auto; opacity: 0.8; color: var(--accent);">
+        <div class="nav-item-left">
+          <svg class="nav-icon" viewBox="0 0 24 24" fill="currentColor" style="color: var(--accent);">
+            <path d="M10 17v-3H3v-4h7V7l5 5-5 5zm9-14H7v2h12v14H7v2h12c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2z"/>
+          </svg>
+          Login / Register
+        </div>
+      </a>
+    {% endif %}
+  </aside>
+
+  <!-- ================= MAIN CONTENT ================= -->
+  <main class="main-content">
+    
+    <!-- Top Header -->
+    <header class="top-header">
+      <div style="display: flex; align-items: center;">
+        <button class="icon-btn mobile-nav-toggle" id="menu-toggle">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z"/></svg>
+        </button>
+        <form class="search-bar" action="{{ url_for('index') }}" method="GET" style="margin: 0;">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor" opacity="0.5"><path d="M15.5 14h-.79l-.28-.27A6.471 6.471 0 0 0 16 9.5 6.5 6.5 0 1 0 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/></svg>
+          <input type="text" name="search" placeholder="Quick find" value="{{ request.args.get('search', '') }}">
+        </form>
+      </div>
+      <div class="header-actions">
+        {% with messages = get_flashed_messages() %}
+          {% if messages %}
+             <span style="color:var(--accent); font-size:12px; font-weight:500;">{{ messages[0] }}</span>
+          {% endif %}
+        {% endwith %}
+        <button class="icon-btn">
+          <svg viewBox="0 0 24 24" fill="currentColor"><path d="M12 22c1.1 0 2-.9 2-2h-4c0 1.1.9 2 2 2zm6-6v-5c0-3.07-1.63-5.64-4.5-6.32V4c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5v.68C7.64 5.36 6 7.92 6 11v5l-2 2v1h16v-1l-2-2zm-2 1H8v-6c0-2.48 1.51-4.5 4-4.5s4 2.02 4 4.5v6z"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Task View -->
+    <div class="task-view">
+      <div class="view-header">
+        <h1 class="view-title">
+          {% if filter_type == 'search' %} Search Results
+          {% elif filter_type == 'inbox' %} Inbox
+          {% elif filter_type == 'today' %} Today
+          {% elif filter_type == 'upcoming' %} Upcoming
+          {% elif filter_type == 'project' %}
+            {% for p in projects %}
+              {% if p.id == active_project_id %}{{ p.name }}{% endif %}
+            {% endfor %}
+          {% endif %}
+        </h1>
+      </div>
+
+      <!-- Task List -->
+      <ul class="task-list">
+        {% if tasks %}
+          {% for task in tasks %}
+          <li class="task-item {% if task.completed %}completed{% endif %}">
+            
+            <!-- Custom Checkbox triggering form submission -->
+            <form method="POST" action="{{ url_for('toggle_task', task_id=task.id) }}" style="display: flex;">
+              <button type="submit" class="custom-checkbox" aria-label="Mark task done">
+                <svg class="check-icon" viewBox="0 0 24 24">
+                  <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+                </svg>
+              </button>
+            </form>
+
+            <!-- Task Info -->
+            <div class="task-content">
+              <span class="task-title">{{ task.task }}</span>
+              <span class="task-meta {% if task.due_date and task.due_date == today %}text-green{% endif %}">
+                {% if task.due_date %}
+                  <svg style="width:12px; vertical-align:text-bottom;" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M19 4h-1V2h-2v2H8V2H6v2H5c-1.11 0-1.99.9-1.99 2L3 20c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V6c0-1.1-.9-2-2-2zm0 16H5V10h14v10z"/>
+                  </svg>
+                  <span>{{ task.due_date.strftime("%b %d") }}</span>
+                {% endif %}
+              </span>
+            </div>
+
+            <!-- Delete Action -->
+            <div class="task-actions">
+              <form method="POST" action="{{ url_for('delete_task', task_id=task.id) }}">
+                <button type="submit" class="delete-btn" aria-label="Delete">
+                  <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor"><path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/></svg>
+                </button>
+              </form>
+            </div>
+          </li>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center; padding: 40px; color: var(--text-secondary);">
+             <p>All done! Time to relax or add a new task.</p>
+          </div>
+        {% endif %}
+      </ul>
+
+      <!-- Add Task Inline Trigger -->
+      <div class="add-task-trigger" id="add-task-trigger">
+        <div class="plus-icon">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+        </div>
+        Add task
+      </div>
+
+      <!-- Add Task Inline Form -->
+      <form method="POST" action="{{ url_for('add_task') }}" class="inline-task-form" id="inline-task-form">
+        <input type="hidden" name="current_filter" value="{{ filter_type }}">
+        <input type="text" name="task" id="task-input" placeholder="Task name" required autocomplete="off">
+        <div style="margin-bottom:12px; display:flex; gap:16px;">
+           <div>
+             <label style="font-size:12px; color:var(--text-secondary); margin-right:4px;">Due date:</label>
+             <input type="date" name="due_date" style="border:1px solid #f0f0f0; border-radius:4px; padding:4px; font-family:inherit; font-size:13px; outline:none; color:var(--text-main);">
+           </div>
+           <div>
+             <label style="font-size:12px; color:var(--text-secondary); margin-right:4px;">Project:</label>
+             <select name="project_id" style="border:1px solid #f0f0f0; border-radius:4px; padding:4px; font-family:inherit; font-size:13px; outline:none; color:var(--text-main); background:#fff;">
+               <option value="">Inbox</option>
+               {% for project in projects %}
+                 <option value="{{ project.id }}" {% if active_project_id == project.id %}selected{% endif %}>{{ project.name }}</option>
+               {% endfor %}
+             </select>
+           </div>
+        </div>
+        <div class="form-actions">
+          <button type="button" class="btn btn-cancel" id="cancel-task-btn">Cancel</button>
+          <button type="submit" class="btn btn-submit">Add task</button>
+        </div>
+      </form>
+
+    </div>
+  </main>
+
+  <!-- Mobile Floating Action Button -->
+  <button class="fab" id="fab-mobile" onclick="document.getElementById('add-task-trigger').click(); window.scrollTo(0, document.body.scrollHeight);">
+    <svg viewBox="0 0 24 24"><path d="M19 13h-6v6h-2v-6H5v-2h6V5h2v6h6v2z"/></svg>
+  </button>
+
+  <!-- ================= SCRIPTS ================= -->
+  <script>
+    // Handle inline form toggle
+    const trigger = document.getElementById('add-task-trigger');
+    const formPanel = document.getElementById('inline-task-form');
+    const cancelBtn = document.getElementById('cancel-task-btn');
+    const taskInput = document.getElementById('task-input');
+
+    trigger.addEventListener('click', () => {
+      trigger.style.display = 'none';
+      formPanel.classList.add('active');
+      taskInput.focus();
+    });
+
+    cancelBtn.addEventListener('click', () => {
+      formPanel.classList.remove('active');
+      trigger.style.display = 'flex';
+      taskInput.value = '';
+    });
+
+    // Mobile Sidebar Toggle
+    const menuBtn = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+
+    menuBtn.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+    // Search Bar Live Submit
+    const searchInput = document.querySelector('input[name="search"]');
+    if (searchInput) {
+      // Put cursor at the end of the input if it has a value (so it doesn't jump back to start on reload)
+      if (searchInput.value) {
+        searchInput.focus();
+        const val = searchInput.value;
+        searchInput.value = '';
+        searchInput.value = val;
+      }
+      
+      let searchTimeout;
+      searchInput.addEventListener('input', function() {
+        clearTimeout(searchTimeout);
+        searchTimeout = setTimeout(() => {
+          this.closest('form').submit();
+        }, 500); // 500ms debounce
+      });
+    }
+  </script>
+</body>
+</html>
