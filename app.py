@@ -1,59 +1,20 @@
-import os
-from flask import Flask, render_template, request, redirect, url_for, session, flash
+from flask import Flask, render_template
 
-app = Flask(__name__)
-app.secret_key = "secret-key-change-this"
+app = Flask(__name__,
+            template_folder='to-do-list/frontend/templates',
+            static_folder='to-do-list/frontend/static')
 
-# ---------------------------
-# HOME PAGE
-# ---------------------------
-@app.route("/")
+@app.route('/')
 def home():
-    return render_template("index.html")
+    return render_template('index.html')
 
-# ---------------------------
-# LOGIN PAGE
-# ---------------------------
-@app.route("/login", methods=["GET", "POST"])
+@app.route('/login')
 def login():
-    if request.method == "POST":
-        username = request.form.get("username")
-        password = request.form.get("password")
+    return render_template('login.html')
 
-        # simple dummy check
-        if username == "admin" and password == "1234":
-            session["user"] = username
-            return redirect(url_for("home"))
-        else:
-            flash("Invalid credentials")
-
-    return render_template("login.html")
-
-# ---------------------------
-# REGISTER PAGE
-# ---------------------------
-@app.route("/register", methods=["GET", "POST"])
+@app.route('/register')
 def register():
-    if request.method == "POST":
-        flash("Registered successfully (dummy)")
-        return redirect(url_for("login"))
+    return render_template('register.html')
 
-    return render_template("register.html")
-
-# ---------------------------
-# LOGOUT
-# ---------------------------
-@app.route("/logout")
-def logout():
-    session.pop("user", None)
-    return redirect(url_for("home"))
-
-# ---------------------------
-# RUN SERVER (RAILWAY FIX)
-# ---------------------------
 if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=int(os.environ.get("PORT", 5000)))
-
-
-
-   
+    app.run(host="0.0.0.0", port=8080)
